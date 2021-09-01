@@ -7,11 +7,12 @@
 
 //#![warn(clippy::all, clippy::pedantic, clippy::nursery, clippy::cargo)]
 
-use std::net::SocketAddr;
+use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 
 pub use error::GGRSError;
 pub use frame_info::{GameInput, GameState};
 pub use network::network_stats::NetworkStats;
+use network::nonblocking_socket::UdpNonBlockingSocket;
 pub use sessions::p2p_session::P2PSession;
 pub use sessions::p2p_spectator_session::P2PSpectatorSession;
 pub use sessions::sync_test_session::SyncTestSession;
@@ -30,9 +31,9 @@ pub(crate) mod sessions {
 pub(crate) mod network {
     pub(crate) mod compression;
     pub(crate) mod network_stats;
+    pub(crate) mod nonblocking_socket;
     pub(crate) mod udp_msg;
     pub(crate) mod udp_protocol;
-    pub(crate) mod udp_socket;
 }
 
 // #############
@@ -200,7 +201,7 @@ pub fn start_p2p_session(
     num_players: u32,
     input_size: usize,
     local_port: u16,
-) -> Result<P2PSession, GGRSError> {
+) -> Result<P2PSession<UdpNonBlockingSocket>, GGRSError> {
     if num_players > MAX_PLAYERS {
         return Err(GGRSError::InvalidRequest {
             info: "Too many players.".to_owned(),
@@ -211,8 +212,12 @@ pub fn start_p2p_session(
             info: "Input size too big.".to_owned(),
         });
     }
-    P2PSession::new(num_players, input_size, local_port)
-        .map_err(|_| GGRSError::SocketCreationFailed)
+
+    // udp nonblocking socket creation
+    let addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)), local_port); //TODO: IpV6?
+    let socket = UdpNonBlockingSocket::new(addr).map_err(|_| GGRSError::SocketCreationFailed)?;
+
+    Ok(P2PSession::new(num_players, input_size, socket))
 }
 
 /// Used to create a new `P2PSpectatorSession` for a spectator.
@@ -240,7 +245,7 @@ pub fn start_p2p_spectator_session(
     input_size: usize,
     local_port: u16,
     host_addr: SocketAddr,
-) -> Result<P2PSpectatorSession, GGRSError> {
+) -> Result<P2PSpectatorSession<UdpNonBlockingSocket>, GGRSError> {
     if num_players > MAX_PLAYERS {
         return Err(GGRSError::InvalidRequest {
             info: "Too many players.".to_owned(),
@@ -251,6 +256,15 @@ pub fn start_p2p_spectator_session(
             info: "Input size too big.".to_owned(),
         });
     }
-    P2PSpectatorSession::new(num_players, input_size, local_port, host_addr)
-        .map_err(|_| GGRSError::SocketCreationFailed)
+
+    // udp nonblocking socket creation
+    let addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)), local_port); //TODO: IpV6?
+    let socket = UdpNonBlockingSocket::new(addr).map_err(|_| GGRSError::SocketCreationFailed)?;
+
+    Ok(P2PSpectatorSession::new(
+        num_players,
+        input_size,
+        socket,
+        host_addr,
+    ))
 }

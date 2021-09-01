@@ -1,9 +1,9 @@
 use crate::error::GGRSError;
 use crate::frame_info::GameInput;
 use crate::network::network_stats::NetworkStats;
+use crate::network::nonblocking_socket::NonBlockingSocket;
 use crate::network::udp_msg::ConnectionStatus;
 use crate::network::udp_protocol::UdpProtocol;
-use crate::network::udp_socket::NonBlockingSocket;
 use crate::sync_layer::SyncLayer;
 use crate::{
     Frame, GGRSEvent, GGRSRequest, PlayerHandle, PlayerType, SessionState, MAX_PREDICTION_FRAMES,
@@ -13,7 +13,7 @@ use crate::{
 use std::collections::vec_deque::Drain;
 use std::collections::HashMap;
 use std::collections::VecDeque;
-use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+use std::net::SocketAddr;
 use std::time::Duration;
 
 /// The minimum amounts of frames between sleeps to compensate being ahead of other players
@@ -96,7 +96,7 @@ pub(crate) enum Event {
 
 /// A `P2PSession` provides a UDP protocol to connect to remote clients in a peer-to-peer fashion.
 #[derive(Debug)]
-pub struct P2PSession {
+pub struct P2PSession<S: NonBlockingSocket> {
     /// The number of players of the session.
     num_players: u32,
     /// The number of bytes an input uses.
@@ -118,8 +118,8 @@ pub struct P2PSession {
     /// Internal State of the Session.
     state: SessionState,
 
-    /// The `P2PSession` uses this UDP socket to send and receive all messages for remote players.
-    socket: NonBlockingSocket,
+    /// The `P2PSession` uses this socket to send and receive all messages for remote players.
+    socket: S,
     /// A map of player handle to a player struct that handles receiving and sending messages for remote players, remote spectators and register local players.
     players: HashMap<PlayerHandle, Player>,
     /// This struct contains information about remote players, like connection status and the frame of last received input.
@@ -134,23 +134,18 @@ pub struct P2PSession {
     event_queue: VecDeque<GGRSEvent>,
 }
 
-impl P2PSession {
-    pub(crate) fn new(
-        num_players: u32,
-        input_size: usize,
-        port: u16,
-    ) -> Result<Self, std::io::Error> {
+impl<S> P2PSession<S>
+where
+    S: NonBlockingSocket + Sized,
+{
+    pub(crate) fn new(num_players: u32, input_size: usize, socket: S) -> Self {
         // local connection status
         let mut local_connect_status = Vec::new();
         for _ in 0..num_players {
             local_connect_status.push(ConnectionStatus::default());
         }
 
-        // udp nonblocking socket creation
-        let addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)), port); //TODO: IpV6?
-        let socket = NonBlockingSocket::new(addr)?;
-
-        Ok(Self {
+        Self {
             state: SessionState::Initializing,
             num_players,
             input_size,
@@ -166,7 +161,7 @@ impl P2PSession {
             disconnect_frame: NULL_FRAME,
             players: HashMap::new(),
             event_queue: VecDeque::new(),
-        })
+        }
     }
 
     /// Must be called for each player in the session (e.g. in a 3 player session, must be called 3 times) before starting the session. Returns the player handle
@@ -585,7 +580,8 @@ impl P2PSession {
     }
 
     /// Returns the current `SessionState` of a session.
-    pub const fn current_state(&self) -> SessionState {
+    // pub const fn current_state(&self) -> SessionState { // unstable for traits
+    pub fn current_state(&self) -> SessionState {
         self.state
     }
 
@@ -595,12 +591,14 @@ impl P2PSession {
     }
 
     /// Returns the number of players this session was constructed with.
-    pub const fn num_players(&self) -> u32 {
+    // pub const fn num_players(&self) -> u32 { // unstable for traits
+    pub fn num_players(&self) -> u32 {
         self.num_players
     }
 
     /// Returns the input size this session was constructed with.
-    pub const fn input_size(&self) -> usize {
+    // pub const fn input_size(&self) -> usize { // unstable for traits
+    pub fn input_size(&self) -> usize {
         self.input_size
     }
 

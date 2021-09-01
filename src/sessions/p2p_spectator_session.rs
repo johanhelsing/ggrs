@@ -1,12 +1,12 @@
 use std::{
     collections::{vec_deque::Drain, VecDeque},
-    net::{IpAddr, Ipv4Addr, SocketAddr},
+    net::SocketAddr,
 };
 
 use crate::{
     frame_info::BLANK_INPUT,
     network::{
-        udp_msg::ConnectionStatus, udp_protocol::UdpProtocol, udp_socket::NonBlockingSocket,
+        nonblocking_socket::NonBlockingSocket, udp_msg::ConnectionStatus, udp_protocol::UdpProtocol,
     },
     Frame, GGRSError, GGRSEvent, GGRSRequest, GameInput, NetworkStats, SessionState, NULL_FRAME,
 };
@@ -27,13 +27,13 @@ const MAX_EVENT_QUEUE_SIZE: usize = 100;
 /// A `P2PSpectatorSession` provides a UDP protocol to connect to a remote host in a peer-to-peer fashion. The host will broadcast all confirmed inputs to this session.
 /// This session can be used to spectate a session without contributing to the game input.
 #[derive(Debug)]
-pub struct P2PSpectatorSession {
+pub struct P2PSpectatorSession<S: NonBlockingSocket> {
     state: SessionState,
     num_players: u32,
     input_size: usize,
     inputs: [GameInput; SPECTATOR_BUFFER_SIZE],
     host_connect_status: Vec<ConnectionStatus>,
-    socket: NonBlockingSocket,
+    socket: S,
     host: UdpProtocol,
     event_queue: VecDeque<GGRSEvent>,
     current_frame: Frame,
@@ -42,24 +42,20 @@ pub struct P2PSpectatorSession {
     catchup_speed: u32,
 }
 
-impl P2PSpectatorSession {
+impl<S: NonBlockingSocket> P2PSpectatorSession<S> {
     pub(crate) fn new(
         num_players: u32,
         input_size: usize,
-        local_port: u16,
+        socket: S,
         host_addr: SocketAddr,
-    ) -> Result<Self, std::io::Error> {
-        // udp nonblocking socket creation
-        let addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)), local_port); //TODO: IpV6?
-        let socket = NonBlockingSocket::new(addr)?;
-
+    ) -> Self {
         // host connection status
         let mut host_connect_status = Vec::new();
         for _ in 0..num_players {
             host_connect_status.push(ConnectionStatus::default());
         }
 
-        Ok(Self {
+        Self {
             state: SessionState::Initializing,
             num_players,
             input_size,
@@ -72,11 +68,12 @@ impl P2PSpectatorSession {
             last_recv_frame: NULL_FRAME,
             max_frames_behind: DEFAULT_MAX_FRAMES_BEHIND,
             catchup_speed: DEFAULT_CATCHUP_SPEED,
-        })
+        }
     }
 
     /// Returns the current `SessionState` of a session.
-    pub const fn current_state(&self) -> SessionState {
+    // pub const fn current_state(&self) -> SessionState {
+    pub fn current_state(&self) -> SessionState {
         self.state
     }
 
@@ -224,12 +221,14 @@ impl P2PSpectatorSession {
     }
 
     /// Returns the number of players this session was constructed with.
-    pub const fn num_players(&self) -> u32 {
+    // pub const fn num_players(&self) -> u32 {
+    pub fn num_players(&self) -> u32 {
         self.num_players
     }
 
     /// Returns the input size this session was constructed with.
-    pub const fn input_size(&self) -> usize {
+    // pub const fn input_size(&self) -> usize {
+    pub fn input_size(&self) -> usize {
         self.input_size
     }
 
