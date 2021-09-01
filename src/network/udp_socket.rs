@@ -1,5 +1,5 @@
 use crate::network::udp_msg::UdpMessage;
-use std::io::ErrorKind;
+// use std::io::ErrorKind;
 use std::net::{SocketAddr, ToSocketAddrs};
 // use std::net::UdpSocket;
 
@@ -12,7 +12,7 @@ pub(crate) struct NonBlockingSocket {
 }
 
 impl NonBlockingSocket {
-    pub(crate) fn new<A: ToSocketAddrs>(addr: A) -> Result<Self, std::io::Error> {
+    pub(crate) fn new<A: ToSocketAddrs>(_addr: A) -> Result<Self, std::io::Error> {
         // let socket = UdpSocket::bind(addr)?;
         // socket.set_nonblocking(true)?;
         Ok(Self {
@@ -21,8 +21,8 @@ impl NonBlockingSocket {
         })
     }
 
-    pub(crate) fn send_to<A: ToSocketAddrs>(&self, msg: &UdpMessage, addr: A) {
-        let buf = bincode::serialize(&msg).unwrap();
+    pub(crate) fn send_to<A: ToSocketAddrs>(&self, msg: &UdpMessage, _addr: A) {
+        let _buf = bincode::serialize(&msg).unwrap();
         // self.socket.send_to(&buf, addr).unwrap();
         // todo! {}
     }
