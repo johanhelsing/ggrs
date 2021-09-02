@@ -89,7 +89,7 @@ pub(crate) enum MessageBody {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct UdpMessage {
-    pub(crate) header: MessageHeader,
-    pub(crate) body: MessageBody,
+pub(crate) struct UdpMessage {
+    pub header: MessageHeader,
+    pub body: MessageBody,
 }

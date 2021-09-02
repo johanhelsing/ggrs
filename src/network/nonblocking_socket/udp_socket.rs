@@ -10,7 +10,7 @@ use super::NonBlockingSocket;
 const RECV_BUFFER_SIZE: usize = 4096;
 
 #[derive(Debug)]
-pub struct UdpNonBlockingSocket {
+pub(crate) struct UdpNonBlockingSocket {
     socket: UdpSocket,
     buffer: [u8; RECV_BUFFER_SIZE],
 }
