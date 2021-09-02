@@ -16,7 +16,7 @@ pub(crate) struct UdpNonBlockingSocket {
 }
 
 impl UdpNonBlockingSocket {
-    pub fn new<A: ToSocketAddrs>(addr: A) -> Result<Self, std::io::Error> {
+    pub(crate) fn new<A: ToSocketAddrs>(addr: A) -> Result<Self, std::io::Error> {
         let socket = UdpSocket::bind(addr)?;
         socket.set_nonblocking(true)?;
         Ok(Self {
