@@ -27,13 +27,13 @@ const MAX_EVENT_QUEUE_SIZE: usize = 100;
 /// A `P2PSpectatorSession` provides a UDP protocol to connect to a remote host in a peer-to-peer fashion. The host will broadcast all confirmed inputs to this session.
 /// This session can be used to spectate a session without contributing to the game input.
 #[derive(Debug)]
-pub struct P2PSpectatorSession<S: NonBlockingSocket> {
+pub struct P2PSpectatorSession {
     state: SessionState,
     num_players: u32,
     input_size: usize,
     inputs: [GameInput; SPECTATOR_BUFFER_SIZE],
     host_connect_status: Vec<ConnectionStatus>,
-    socket: S,
+    socket: Box<dyn NonBlockingSocket>,
     host: UdpProtocol,
     event_queue: VecDeque<GGRSEvent>,
     current_frame: Frame,
@@ -42,11 +42,11 @@ pub struct P2PSpectatorSession<S: NonBlockingSocket> {
     catchup_speed: u32,
 }
 
-impl<S: NonBlockingSocket> P2PSpectatorSession<S> {
+impl P2PSpectatorSession {
     pub(crate) fn new(
         num_players: u32,
         input_size: usize,
-        socket: S,
+        socket: Box<dyn NonBlockingSocket>,
         host_addr: SocketAddr,
     ) -> Self {
         // host connection status
@@ -72,8 +72,7 @@ impl<S: NonBlockingSocket> P2PSpectatorSession<S> {
     }
 
     /// Returns the current `SessionState` of a session.
-    // pub const fn current_state(&self) -> SessionState {
-    pub fn current_state(&self) -> SessionState {
+    pub const fn current_state(&self) -> SessionState {
         self.state
     }
 
@@ -221,14 +220,12 @@ impl<S: NonBlockingSocket> P2PSpectatorSession<S> {
     }
 
     /// Returns the number of players this session was constructed with.
-    // pub const fn num_players(&self) -> u32 {
-    pub fn num_players(&self) -> u32 {
+    pub const fn num_players(&self) -> u32 {
         self.num_players
     }
 
     /// Returns the input size this session was constructed with.
-    // pub const fn input_size(&self) -> usize {
-    pub fn input_size(&self) -> usize {
+    pub const fn input_size(&self) -> usize {
         self.input_size
     }
 

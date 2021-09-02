@@ -96,7 +96,7 @@ pub(crate) enum Event {
 
 /// A `P2PSession` provides a UDP protocol to connect to remote clients in a peer-to-peer fashion.
 #[derive(Debug)]
-pub struct P2PSession<S: NonBlockingSocket> {
+pub struct P2PSession {
     /// The number of players of the session.
     num_players: u32,
     /// The number of bytes an input uses.
@@ -119,7 +119,7 @@ pub struct P2PSession<S: NonBlockingSocket> {
     state: SessionState,
 
     /// The `P2PSession` uses this socket to send and receive all messages for remote players.
-    socket: S,
+    socket: Box<dyn NonBlockingSocket>,
     /// A map of player handle to a player struct that handles receiving and sending messages for remote players, remote spectators and register local players.
     players: HashMap<PlayerHandle, Player>,
     /// This struct contains information about remote players, like connection status and the frame of last received input.
@@ -134,11 +134,12 @@ pub struct P2PSession<S: NonBlockingSocket> {
     event_queue: VecDeque<GGRSEvent>,
 }
 
-impl<S> P2PSession<S>
-where
-    S: NonBlockingSocket + Sized,
-{
-    pub(crate) fn new(num_players: u32, input_size: usize, socket: S) -> Self {
+impl P2PSession {
+    pub(crate) fn new(
+        num_players: u32,
+        input_size: usize,
+        socket: Box<dyn NonBlockingSocket>,
+    ) -> Self {
         // local connection status
         let mut local_connect_status = Vec::new();
         for _ in 0..num_players {
@@ -580,8 +581,7 @@ where
     }
 
     /// Returns the current `SessionState` of a session.
-    // pub const fn current_state(&self) -> SessionState { // unstable for traits
-    pub fn current_state(&self) -> SessionState {
+    pub const fn current_state(&self) -> SessionState {
         self.state
     }
 
@@ -591,14 +591,12 @@ where
     }
 
     /// Returns the number of players this session was constructed with.
-    // pub const fn num_players(&self) -> u32 { // unstable for traits
-    pub fn num_players(&self) -> u32 {
+    pub const fn num_players(&self) -> u32 {
         self.num_players
     }
 
     /// Returns the input size this session was constructed with.
-    // pub const fn input_size(&self) -> usize { // unstable for traits
-    pub fn input_size(&self) -> usize {
+    pub const fn input_size(&self) -> usize {
         self.input_size
     }
 

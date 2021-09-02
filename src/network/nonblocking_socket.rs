@@ -5,7 +5,7 @@ mod udp_socket;
 
 pub(crate) use udp_socket::UdpNonBlockingSocket;
 
-pub trait NonBlockingSocket {
+pub trait NonBlockingSocket: std::fmt::Debug {
     fn send_to(&self, msg: &UdpMessage, addr: SocketAddr);
     fn receive_all_messages(&mut self) -> Vec<(SocketAddr, UdpMessage)>;
 }

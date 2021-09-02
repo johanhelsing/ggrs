@@ -201,7 +201,7 @@ pub fn start_p2p_session(
     num_players: u32,
     input_size: usize,
     local_port: u16,
-) -> Result<P2PSession<UdpNonBlockingSocket>, GGRSError> {
+) -> Result<P2PSession, GGRSError> {
     if num_players > MAX_PLAYERS {
         return Err(GGRSError::InvalidRequest {
             info: "Too many players.".to_owned(),
@@ -215,7 +215,8 @@ pub fn start_p2p_session(
 
     // udp nonblocking socket creation
     let addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)), local_port); //TODO: IpV6?
-    let socket = UdpNonBlockingSocket::new(addr).map_err(|_| GGRSError::SocketCreationFailed)?;
+    let socket =
+        Box::new(UdpNonBlockingSocket::new(addr).map_err(|_| GGRSError::SocketCreationFailed)?);
 
     Ok(P2PSession::new(num_players, input_size, socket))
 }
@@ -245,7 +246,7 @@ pub fn start_p2p_spectator_session(
     input_size: usize,
     local_port: u16,
     host_addr: SocketAddr,
-) -> Result<P2PSpectatorSession<UdpNonBlockingSocket>, GGRSError> {
+) -> Result<P2PSpectatorSession, GGRSError> {
     if num_players > MAX_PLAYERS {
         return Err(GGRSError::InvalidRequest {
             info: "Too many players.".to_owned(),
@@ -259,7 +260,8 @@ pub fn start_p2p_spectator_session(
 
     // udp nonblocking socket creation
     let addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)), local_port); //TODO: IpV6?
-    let socket = UdpNonBlockingSocket::new(addr).map_err(|_| GGRSError::SocketCreationFailed)?;
+    let socket =
+        Box::new(UdpNonBlockingSocket::new(addr).map_err(|_| GGRSError::SocketCreationFailed)?);
 
     Ok(P2PSpectatorSession::new(
         num_players,

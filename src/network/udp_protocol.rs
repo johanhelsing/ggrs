@@ -338,7 +338,7 @@ impl UdpProtocol {
      *  SENDING MESSAGES
      */
 
-    pub(crate) fn send_all_messages<S: NonBlockingSocket>(&mut self, socket: &S) {
+    pub(crate) fn send_all_messages(&mut self, socket: &Box<dyn NonBlockingSocket>) {
         if self.state == ProtocolState::Shutdown {
             self.send_queue.drain(..);
             return;
