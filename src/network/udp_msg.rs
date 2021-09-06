@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use crate::{Frame, NULL_FRAME};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub(crate) struct ConnectionStatus {
+pub struct ConnectionStatus {
     pub disconnected: bool,
     pub last_frame: Frame,
 }
@@ -18,17 +18,17 @@ impl Default for ConnectionStatus {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Default)]
-pub(crate) struct SyncRequest {
+pub struct SyncRequest {
     pub random_request: u32, // please reply back with this random data
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Default)]
-pub(crate) struct SyncReply {
+pub struct SyncReply {
     pub random_reply: u32, // here's your random data back
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub(crate) struct Input {
+pub struct Input {
     pub peer_connect_status: Vec<ConnectionStatus>,
     pub disconnect_requested: bool,
     pub start_frame: Frame,
@@ -49,7 +49,7 @@ impl Default for Input {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub(crate) struct InputAck {
+pub struct InputAck {
     pub ack_frame: Frame,
 }
 
@@ -62,23 +62,23 @@ impl Default for InputAck {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Default)]
-pub(crate) struct QualityReport {
+pub struct QualityReport {
     pub frame_advantage: i8, // frame advantage of other player
     pub ping: u128,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Default)]
-pub(crate) struct QualityReply {
+pub struct QualityReply {
     pub pong: u128,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Default)]
-pub(crate) struct MessageHeader {
+pub struct MessageHeader {
     pub magic: u16,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub(crate) enum MessageBody {
+pub enum MessageBody {
     SyncRequest(SyncRequest),
     SyncReply(SyncReply),
     Input(Input),
@@ -90,6 +90,17 @@ pub(crate) enum MessageBody {
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct UdpMessage {
-    pub(crate) header: MessageHeader,
-    pub(crate) body: MessageBody,
+    pub header: MessageHeader,
+    // pub(crate) header: MessageHeader,
+    pub body: MessageBody,
+    // pub(crate) body: MessageBody,
+}
+
+impl UdpMessage {
+    pub fn dummy() -> Self {
+        Self {
+            header: MessageHeader { magic: 123 },
+            body: MessageBody::KeepAlive,
+        }
+    }
 }
